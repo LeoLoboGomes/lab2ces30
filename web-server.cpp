@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 
@@ -218,7 +219,7 @@ int main(int argc, char *argv[]) {
         // zera a memoria do buffer
         memset(buf, '\0', sizeof(buf));
 
-        // recebe ate 20 bytes do cliente remoto
+        // recebe ate 100 bytes do cliente remoto
         if (recv(clientSockfd, buf, 100, 0) == -1) {
           perror("recv");
           return 5;
@@ -249,36 +250,47 @@ int main(int argc, char *argv[]) {
             response.setStatus("200");
         }else{
             response.setStatus("404");
+            //do something
+
+            continue;
         }
         bytecode = response.encode();
 
+        std::ifstream is (filepath, std::ifstream::binary);
         //abrir file e definir cont
-        FILE *file;
+        /*FILE *file;
         file = fopen(filepath.c_str(), "r");
         if (file == NULL) {//response 404
 
             continue;
-        }
+        }*/
         int cont = 0;
-        char msg[1500];
-        memset(msg, '\0', 1500);
+        char msg[2000];
+        memset(msg, '\0', 2000);
+        std::cout << bytecode;
+        std::cout << "bytes in header: " << bytecode.size() << std::endl;
         //loop para envio do file
         while(cont < file_size){
             int readNum = 1500 - bytecode.size();
-            fread(msg, 1, readNum, file);
+            //fread(msg, sizeof(char), readNum, file);
+            is.read (msg,readNum);
+            std::cout << "bytes lidos: " << readNum << std::endl;
             string data = msg;
-            bytecode += msg;
+            bytecode += data;
+            std::cout << "bytes in bytecode: " << bytecode.size() << std::endl;
             int byte_size;
 
-            if ((byte_size = send(clientSockfd, bytecode.c_str(), bytecode.size(), 0)) == -1) {
+
+            if ((byte_size = send(clientSockfd, bytecode.c_str(), 1500, 0)) == -1) {
                 perror("send");
                 return 6;
             }
-
-            bytecode = "";
-            memset(msg, '\0',1500);
+            std::cout << "bytes enviados: " << byte_size << std::endl;
+            bytecode = "\0";
+            memset(msg, '\0',2000);
 
             cont += byte_size;
+            std::cout << "cont: " << cont << std::endl;
         }
 
 

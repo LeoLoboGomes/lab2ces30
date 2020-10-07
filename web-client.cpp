@@ -268,14 +268,15 @@ int main(int argc, char *argv[]) {
             string msg;
             HTTPReq resp;
             //Receber mensagem que contem HTTP header
-            if (recv(sockfd, buf, sizeof(buf), 0) == -1) {
+            if (recv(sockfd, buf, 1500, 0) == -1) {
                 perror("recv");
                 return 5;
             }
 
             msg = buf;
-            std::
             resp.parse(msg);
+            std::cout << "tamanho do arquivo total: " << resp.getContentLenght() << endl;
+            std::cout << "tamanho da mensagem com header: " << msg.size() << endl;
             if(resp.getStatus().compare("200") == 0){
                 clength = resp.getContentLenght();
                 std::string::iterator aux;
@@ -296,19 +297,23 @@ int main(int argc, char *argv[]) {
 
                 while(cont != clength){
                     // zera o buffer
+                    std::cout << "cont: " << cont << std::endl;
                     memset(buf, '\0', sizeof(buf));
                     msg = "";
 
                     // recebe no buffer uma certa quantidade de bytes ate 20
-                    if ((bytes_recebidos = recv(sockfd, buf, 2000, 0) == -1)) {
+                    if ((bytes_recebidos = recv(sockfd, buf, 1500, 0) == -1)) {
                         perror("recv");
                         return 5;
                     }
                     msg = buf;
                     ofs << msg;
-                    cont += bytes_recebidos;
+                    std::cout << "tamanho da mensagem recebide: " << msg.size() << std::endl;
+                    cont += msg.size();
+                    std::cout << "bytes restantes: " << clength - cont << std::endl;
 
                 }
+                std::cout << "saiu do loop" << endl;
                 ofs.close();
             }
             msg = "";
