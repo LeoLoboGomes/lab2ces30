@@ -246,61 +246,68 @@ int main(int argc, char *argv[]) {
             file_size = int(size);
             response.setContentLength(int(size));
             response.setStatus("200");
-        }else{
+
+            bytecode = response.encode();
+
+            std::ifstream is (filepath, std::ifstream::binary);
+            //abrir file e definir cont
+            /*FILE *file;
+            file = fopen(filepath.c_str(), "r");
+            if (file == NULL) {//response 404
+
+                continue;
+            }*/
+            int cont = 0;
+            char msg[2000];
+            memset(msg, '\0', 2000);
+            std::cout << bytecode;
+            std::cout << "bytes in header: " << bytecode.size() << std::endl;
+            //loop para envio do file
+            while(cont < file_size){
+                int readNum = 1500 - bytecode.size();
+                //fread(msg, sizeof(char), readNum, file);
+                is.read (msg,readNum);
+                std::cout << "bytes lidos: " << readNum << std::endl;
+                string data = msg;
+                bytecode += data;
+                std::cout << "bytes in bytecode: " << bytecode.size() << std::endl;
+                int byte_size;
+
+
+                if ((byte_size = send(clientSockfd, bytecode.c_str(), 1500, 0)) == -1) {
+                    perror("send");
+                    return 6;
+                }
+                std::cout << "bytes enviados: " << byte_size << std::endl;
+                bytecode = "\0";
+                memset(msg, '\0',2000);
+
+                cont += byte_size;
+                std::cout << "cont: " << cont << std::endl;
+            }
+
+            // envia de volta o buffer recebido como um echo
+
+
+            // o conteudo do buffer convertido para string pode
+            // ser comparado com palavras-chave
+            if (ss.str() == "close\n")
+              break;
+
+            // zera a string para receber a proxima
+            ss.str("");
+        } else {
             response.setStatus("404");
             //do something
-
-            continue;
-        }
-        bytecode = response.encode();
-
-        std::ifstream is (filepath, std::ifstream::binary);
-        //abrir file e definir cont
-        /*FILE *file;
-        file = fopen(filepath.c_str(), "r");
-        if (file == NULL) {//response 404
-
-            continue;
-        }*/
-        int cont = 0;
-        char msg[2000];
-        memset(msg, '\0', 2000);
-        std::cout << bytecode;
-        std::cout << "bytes in header: " << bytecode.size() << std::endl;
-        //loop para envio do file
-        while(cont < file_size){
-            int readNum = 1500 - bytecode.size();
-            //fread(msg, sizeof(char), readNum, file);
-            is.read (msg,readNum);
-            std::cout << "bytes lidos: " << readNum << std::endl;
-            string data = msg;
-            bytecode += data;
-            std::cout << "bytes in bytecode: " << bytecode.size() << std::endl;
             int byte_size;
-
-
-            if ((byte_size = send(clientSockfd, bytecode.c_str(), 1500, 0)) == -1) {
+            bytecode = response.encode();
+            if ((byte_size = send(clientSockfd, bytecode.c_str(), 100, 0)) == -1) {
                 perror("send");
                 return 6;
             }
-            std::cout << "bytes enviados: " << byte_size << std::endl;
-            bytecode = "\0";
-            memset(msg, '\0',2000);
 
-            cont += byte_size;
-            std::cout << "cont: " << cont << std::endl;
+            continue;
         }
-
-        // envia de volta o buffer recebido como um echo
-
-
-        // o conteudo do buffer convertido para string pode
-        // ser comparado com palavras-chave
-        if (ss.str() == "close\n")
-          break;
-
-        // zera a string para receber a proxima
-        ss.str("");
     }
 
     // fecha o socket
