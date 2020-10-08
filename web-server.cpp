@@ -151,8 +151,6 @@ int main(int argc, char *argv[]) {
     addrDNS(argv[1], address);
     cout << address << " " << argv[2] << " "<< argv[3] << endl;
 
-
-
     // cria um socket para IPv4 e usando protocolo de transporte TCP
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 

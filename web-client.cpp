@@ -290,6 +290,7 @@ int main(int argc, char *argv[]) {
                     }
                 }
                 auto str = std::string(aux, msg.end());
+                std::cout << "str: " << str << std::endl;
                 cont += str.size();
                 string filename = "." + object;
                 std::ofstream ofs(filename, std::ofstream::out);
@@ -297,7 +298,6 @@ int main(int argc, char *argv[]) {
 
                 while(cont != clength){
                     // zera o buffer
-                    std::cout << "cont: " << cont << std::endl;
                     memset(buf, '\0', sizeof(buf));
                     msg = "";
 
@@ -306,9 +306,10 @@ int main(int argc, char *argv[]) {
                         perror("recv");
                         return 5;
                     }
+                    std::cout << "Bytes recebidos: " << bytes_recebidos << std::endl;
                     msg = buf;
                     ofs << msg;
-                    std::cout << "tamanho da mensagem recebide: " << msg.size() << std::endl;
+                    std::cout << "tamanho da mensagem recebida: " << msg.size() << std::endl;
                     cont += msg.size();
                     std::cout << "bytes restantes: " << clength - cont << std::endl;
 
@@ -332,5 +333,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
-
