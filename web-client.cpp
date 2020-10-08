@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     strcpy(host, address.c_str());
     addrDNS(host, addr);
 
-    cout << addr << " " << port << " "<< object << endl;
+    cout << addr << " " << port << " " << object << endl;
     // cria o socket TCP IP
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -316,6 +316,9 @@ int main(int argc, char *argv[]) {
                 }
                 std::cout << "saiu do loop" << endl;
                 ofs.close();
+            } else if(resp.getStatus().compare("404") == 0) {
+              std::cout << buf << std::endl;
+              std::cout << object.substr(1,object.length()) << " was not found" << std::endl;
             }
             msg = "";
         }
