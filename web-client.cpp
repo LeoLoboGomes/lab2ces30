@@ -158,13 +158,8 @@ string cleanBuffer(char *buf) {
   return ans;
 }
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        std::cerr << "usage: web-server [URL]" << std::endl;
-        return 1;
-    }
-
-    string url = argv[1];
+vector<string> getInformation(string url){
+    vector<string> vec;
     string address;
     string port;
     string object;
@@ -197,6 +192,38 @@ int main(int argc, char *argv[]) {
         }
 
     }
+    vec.push_back(address);
+    vec.push_back(port);
+    vec.push_back(object);
+    return vec;
+}
+
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        std::cerr << "usage: web-server [URL]" << std::endl;
+        return 1;
+    }
+
+    string url = argv[1];
+    string address;
+    string port;
+    string object;
+    vector<string> aux;
+    vector<string> objectList;
+
+    for(int i = 1; i < argc; i++){
+        url = argv[i];
+        aux = getInformation(url);
+        if(i == 1){
+            address = aux[0];
+            port = aux[1];
+            objectList.push_back(aux[2]);
+        } else {
+            objectList.push_back(aux[2]);
+        }
+    }
+
+    object = objectList[0];
 
     stringstream stream(port);
 
@@ -257,91 +284,86 @@ int main(int argc, char *argv[]) {
     std::string input;
     std::stringstream ss;
 
-    //Criar HTTP request
-    HTTPReq request(object, "req");
-    string bytecode;
-    bytecode = request.encode();
-
+    
+    //Transformar esse while em for iterando pelo vector objectList e trocar object por objectList[iterator]
     while (!isEnd) {
-        // leitura do teclado
-        std::cout << "send(y/n): ";
-        std::cin >> input;
-        if(input.compare("y") == 0){
-            // converte a string lida em vetor de bytes
-            // com o tamanho do vetor de caracteres
-            if (send(sockfd, bytecode.c_str(), bytecode.size(), 0) == -1) {
-                perror("send");
-                return 4;
-            }
-            int cont = 0, clength, bytes_recebidos;
-            string msg;
-            HTTPReq resp;
-            //Receber mensagem que contem HTTP header
-            if (recv(sockfd, buf, 1500, 0) == -1) {
-                perror("recv");
-                return 5;
-            }
+        //Criar HTTP request
+        HTTPReq request(object, "req");
+        string bytecode;
+        bytecode = request.encode();
 
-            msg = cleanBuffer(buf);
-
-            resp.parse(msg);
-            std::cout << "tamanho do arquivo total: " << resp.getContentLenght() << endl;
-            std::cout << "tamanho da mensagem com header: " << msg.size() << endl;
-            if(resp.getStatus().compare("200") == 0){
-                clength = resp.getContentLenght();
-                std::string::iterator aux;
-                //começar a gravar file
-                for (std::string::iterator it=msg.begin(); it!=msg.end(); ++it){
-                    if(*it == '\r' && *(it + 1) == '\n' && *(it + 2) == '\r' && *(it + 3) == '\n'){
-                        //it eh o iterator ond começa a linha em branco
-                        //it + 4 eh ond começa o file
-                        aux = (it + 4);
-                        break;
-                    }
-                }
-                auto str = std::string(aux, msg.end());
-                std::cout << "str: " << str << std::endl;
-                cont += str.size();
-                string filename = "." + object;
-                std::ofstream ofs(filename, std::ofstream::out);
-                ofs << str;
-
-                while(cont != clength){
-                    // zera o buffer
-                    memset(buf, '\0', sizeof(buf));
-                    msg = "";
-
-                    // recebe no buffer uma certa quantidade de bytes ate 20
-                    if ((bytes_recebidos = recv(sockfd, buf, 1500, 0) == -1)) {
-                        perror("recv");
-                        return 5;
-                    }
-
-                    std::cout << "Bytes recebidos: " << bytes_recebidos << std::endl;
-
-                    msg = cleanBuffer(buf);
-                    ofs << msg;
-                    std::cout << "tamanho da mensagem recebida: " << msg.size() << std::endl;
-                    
-                    cont += msg.size();
-                    std::cout << "bytes restantes: " << clength - cont << std::endl;
-
-                }
-                std::cout << "saiu do loop" << endl;
-                ofs.close();
-            } else if(resp.getStatus().compare("404") == 0) {
-              std::cout << buf << std::endl;
-              std::cout << object.substr(1,object.length()) << " was not found" << std::endl;
-            }
-            msg = "";
+        //depois do for tirar isso aki
+        cin >> input;
+        // converte a string lida em vetor de bytes
+        // com o tamanho do vetor de caracteres
+        if (send(sockfd, bytecode.c_str(), bytecode.size(), 0) == -1) {
+            perror("send");
+            return 4;
+        }
+        int cont = 0, clength, bytes_recebidos;
+        string msg;
+        HTTPReq resp;
+        //Receber mensagem que contem HTTP header
+        if (recv(sockfd, buf, 1500, 0) == -1) {
+            perror("recv");
+            return 5;
         }
 
-        // se a string tiver o valor close, sair do loop de eco
-        if (ss.str() == "close\n")
-            break;
+        msg = cleanBuffer(buf);
 
-        // zera a string ss
-        ss.str("");
+        resp.parse(msg);
+        std::cout << "tamanho do arquivo total: " << resp.getContentLenght() << endl;
+        std::cout << "tamanho da mensagem com header: " << msg.size() << endl;
+        if(resp.getStatus().compare("200") == 0){
+            clength = resp.getContentLenght();
+            std::string::iterator aux;
+            //começar a gravar file
+            for (std::string::iterator it=msg.begin(); it!=msg.end(); ++it){
+                if(*it == '\r' && *(it + 1) == '\n' && *(it + 2) == '\r' && *(it + 3) == '\n'){
+                    //it eh o iterator ond começa a linha em branco
+                    //it + 4 eh ond começa o file
+                    aux = (it + 4);
+                    break;
+                }
+            }
+            auto str = std::string(aux, msg.end());
+            std::cout << "str: " << str << std::endl;
+            cont += str.size();
+            string filename = "." + object;
+            std::ofstream ofs(filename, std::ofstream::out);
+            ofs << str;
+
+            while(cont != clength){
+                // zera o buffer
+                memset(buf, '\0', sizeof(buf));
+                msg = "";
+
+                // recebe no buffer uma certa quantidade de bytes ate 20
+                if ((bytes_recebidos = recv(sockfd, buf, 1500, 0) == -1)) {
+                    perror("recv");
+                    return 5;
+                }
+
+                std::cout << "Bytes recebidos: " << bytes_recebidos << std::endl;
+
+                msg = cleanBuffer(buf);
+                ofs << msg;
+                std::cout << "tamanho da mensagem recebida: " << msg.size() << std::endl;
+                
+                cont += msg.size();
+                std::cout << "bytes restantes: " << clength - cont << std::endl;
+
+            }
+            std::cout << "saiu do loop" << endl;
+            ofs.close();
+        } else if(resp.getStatus().compare("404") == 0) {
+            std::cout << buf << std::endl;
+            std::cout << object.substr(1,object.length()) << " was not found" << std::endl;
+        } else if(resp.getStatus().compare("400") == 0){
+            std::cout << buf << std::endl;
+        }
+        msg = "";
+
     }
 
     // fecha o socket
