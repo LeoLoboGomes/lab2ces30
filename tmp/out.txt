@@ -1,0 +1,125 @@
+Alice Springs
+Andamooka
+Armidale
+Ayr
+Ballarat
+Bairnsdale East
+Ballina
+Batemans Bay
+Bathurst
+Bendigo
+Bicheno
+Birdsville
+Bordertown
+Bourke
+Brisbane
+Broome
+Bundaberg
+Burnie
+Byron Bay
+Cairns
+Caboolture
+Caloundra
+Canberra
+Ceduna
+Charleville
+Clare
+Cobram
+Colac
+Cowell
+Cranbourne
+Dalby
+Deniliquin
+Dubbo
+East Maitland
+Eidsvold
+Esperance
+Forbes
+Gawler
+Georgetown
+Gingin
+Geraldton
+Gladstone
+Goondiwindi
+Griffith
+Gympie South
+Hamilton
+Hobart
+Hughenden
+Inverell
+Kalbarri
+Karratha
+Katanning
+Katoomba
+Kiama
+Kimba
+Kingoonya
+Kingston South East
+Kwinana
+Laverton
+Leonora
+Longreach
+Manjimup
+Maryborough
+Meekatharra
+Melton
+Melbourne
+Meningie
+Mildura
+Morawa
+Mount Barker
+Mount Isa
+Mudgee
+Muswellbrook
+Narrabri West
+Newcastle
+Norseman
+North Mackay
+North Lismore
+North Scottsdale
+Nowra
+Oatlands
+Orange
+Pambula
+Parkes
+Perth
+Penola
+Peterborough
+Port Augusta West
+Port Douglas
+Port Lincoln
+Port Pirie
+Portland
+Queanbeyan
+Quilpie
+Richmond
+Rockhampton
+Roma
+Scone
+Shepparton
+Seymour
+Singleton
+South Grafton
+South Melbourne
+Stawell
+Sunbury
+Sydney
+Thargomindah
+Three Springs
+Toowoomba
+Traralgon
+Tumut
+Ulladulla
+Wagga Wagga
+Wallaroo
+Wangaratta
+Warwick
+West Tamworth
+Wilcannia
+Winton
+Windorah
+Wollongong
+Woomera
+Yeppoon
+Yulara
+Custo: 1647.34

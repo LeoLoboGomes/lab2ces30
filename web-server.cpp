@@ -293,10 +293,6 @@ int main(int argc, char *argv[]) {
             std::cout << "cont: " << cont << std::endl;
         }
 
-
-
-
-
         // envia de volta o buffer recebido como um echo
 
 
