@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     strcpy(host, address.c_str());
     addrDNS(host, addr);
 
-    cout << addr << " " << port << " "<< object << endl;
+    cout << addr << " " << port << " " << object << endl;
     // cria o socket TCP IP
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -308,6 +308,7 @@ int main(int argc, char *argv[]) {
                     }
                     msg = buf;
                     ofs << msg;
+                    cout << "quantidade valor retornado por recv: " << bytes_recebidos << endl;
                     std::cout << "tamanho da mensagem recebide: " << msg.size() << std::endl;
                     cont += msg.size();
                     std::cout << "bytes restantes: " << clength - cont << std::endl;
