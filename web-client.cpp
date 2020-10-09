@@ -284,12 +284,16 @@ int main(int argc, char *argv[]) {
     std::string input;
     std::stringstream ss;
 
-    //Criar HTTP request
-    HTTPReq request(object, "req");
-    string bytecode;
-    bytecode = request.encode();
 
+
+    //transformar este while num for que itera sobe a objectList e trocar os object por objectList[i]
+    //Apagar essa leitura de input para deixar os envios automaticos (pode utilizar para teste por enquanto)
     while (!isEnd) {
+        //Criar HTTP request
+        HTTPReq request(object, "req");
+        string bytecode;
+        bytecode = request.encode();
+
         // leitura do teclado
         std::cout << "send(y/n): ";
         std::cin >> input;
