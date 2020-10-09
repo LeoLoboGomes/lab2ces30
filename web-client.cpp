@@ -284,86 +284,93 @@ int main(int argc, char *argv[]) {
     std::string input;
     std::stringstream ss;
 
-    
-    //Transformar esse while em for iterando pelo vector objectList e trocar object por objectList[iterator]
+    //Criar HTTP request
+    HTTPReq request(object, "req");
+    string bytecode;
+    bytecode = request.encode();
+
     while (!isEnd) {
-        //Criar HTTP request
-        HTTPReq request(object, "req");
-        string bytecode;
-        bytecode = request.encode();
-
-        //depois do for tirar isso aki
-        cin >> input;
-        // converte a string lida em vetor de bytes
-        // com o tamanho do vetor de caracteres
-        if (send(sockfd, bytecode.c_str(), bytecode.size(), 0) == -1) {
-            perror("send");
-            return 4;
-        }
-        int cont = 0, clength, bytes_recebidos;
-        string msg;
-        HTTPReq resp;
-        //Receber mensagem que contem HTTP header
-        if (recv(sockfd, buf, 1500, 0) == -1) {
-            perror("recv");
-            return 5;
-        }
-
-        msg = cleanBuffer(buf);
-
-        resp.parse(msg);
-        std::cout << "tamanho do arquivo total: " << resp.getContentLenght() << endl;
-        std::cout << "tamanho da mensagem com header: " << msg.size() << endl;
-        if(resp.getStatus().compare("200") == 0){
-            clength = resp.getContentLenght();
-            std::string::iterator aux;
-            //começar a gravar file
-            for (std::string::iterator it=msg.begin(); it!=msg.end(); ++it){
-                if(*it == '\r' && *(it + 1) == '\n' && *(it + 2) == '\r' && *(it + 3) == '\n'){
-                    //it eh o iterator ond começa a linha em branco
-                    //it + 4 eh ond começa o file
-                    aux = (it + 4);
-                    break;
-                }
+        // leitura do teclado
+        std::cout << "send(y/n): ";
+        std::cin >> input;
+        if(input.compare("y") == 0){
+            // converte a string lida em vetor de bytes
+            // com o tamanho do vetor de caracteres
+            if (send(sockfd, bytecode.c_str(), bytecode.size(), 0) == -1) {
+                perror("send");
+                return 4;
             }
-            auto str = std::string(aux, msg.end());
-            std::cout << "str: " << str << std::endl;
-            cont += str.size();
-            string filename = "." + object;
-            std::ofstream ofs(filename, std::ofstream::out);
-            ofs << str;
-
-            while(cont != clength){
-                // zera o buffer
-                memset(buf, '\0', sizeof(buf));
-                msg = "";
-
-                // recebe no buffer uma certa quantidade de bytes ate 20
-                if ((bytes_recebidos = recv(sockfd, buf, 1500, 0) == -1)) {
-                    perror("recv");
-                    return 5;
-                }
-
-                std::cout << "Bytes recebidos: " << bytes_recebidos << std::endl;
-
-                msg = cleanBuffer(buf);
-                ofs << msg;
-                std::cout << "tamanho da mensagem recebida: " << msg.size() << std::endl;
-                
-                cont += msg.size();
-                std::cout << "bytes restantes: " << clength - cont << std::endl;
-
+            int cont = 0, clength, bytes_recebidos;
+            string msg;
+            HTTPReq resp;
+            //Receber mensagem que contem HTTP header
+            if (recv(sockfd, buf, 1500, 0) == -1) {
+                perror("recv");
+                return 5;
             }
-            std::cout << "saiu do loop" << endl;
-            ofs.close();
-        } else if(resp.getStatus().compare("404") == 0) {
-            std::cout << buf << std::endl;
-            std::cout << object.substr(1,object.length()) << " was not found" << std::endl;
-        } else if(resp.getStatus().compare("400") == 0){
-            std::cout << buf << std::endl;
-        }
-        msg = "";
 
+            msg = cleanBuffer(buf);
+
+            resp.parse(msg);
+            std::cout << "tamanho do arquivo total: " << resp.getContentLenght() << endl;
+            std::cout << "tamanho da mensagem com header: " << msg.size() << endl;
+            if(resp.getStatus().compare("200") == 0){
+                clength = resp.getContentLenght();
+                std::string::iterator aux;
+                //começar a gravar file
+                for (std::string::iterator it=msg.begin(); it!=msg.end(); ++it){
+                    if(*it == '\r' && *(it + 1) == '\n' && *(it + 2) == '\r' && *(it + 3) == '\n'){
+                        //it eh o iterator ond começa a linha em branco
+                        //it + 4 eh ond começa o file
+                        aux = (it + 4);
+                        break;
+                    }
+                }
+                auto str = std::string(aux, msg.end());
+                std::cout << "str: " << str << std::endl;
+                cont += str.size();
+                string filename = "." + object;
+                std::ofstream ofs(filename, std::ofstream::out);
+                ofs << str;
+
+                while(cont != clength){
+                    // zera o buffer
+                    memset(buf, '\0', sizeof(buf));
+                    msg = "";
+
+                    // recebe no buffer uma certa quantidade de bytes ate 20
+                    if ((bytes_recebidos = recv(sockfd, buf, 1500, 0) == -1)) {
+                        perror("recv");
+                        return 5;
+                    }
+
+                    std::cout << "Bytes recebidos: " << bytes_recebidos << std::endl;
+
+                    msg = cleanBuffer(buf);
+                    ofs << msg;
+                    std::cout << "tamanho da mensagem recebida: " << msg.size() << std::endl;
+                    
+                    cont += msg.size();
+                    std::cout << "bytes restantes: " << clength - cont << std::endl;
+
+                }
+                std::cout << "saiu do loop" << endl;
+                ofs.close();
+            } else if(resp.getStatus().compare("404") == 0) {
+              std::cout << buf << std::endl;
+              std::cout << object.substr(1,object.length()) << " was not found" << std::endl;
+            } else if(resp.getStatus().compare("400") == 0){
+                std::cout << buf << std::endl;
+            }
+            msg = "";
+        }
+
+        // se a string tiver o valor close, sair do loop de eco
+        if (ss.str() == "close\n")
+            break;
+
+        // zera a string ss
+        ss.str("");
     }
 
     // fecha o socket
