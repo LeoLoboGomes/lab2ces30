@@ -16,6 +16,7 @@
 #include <fstream>
 
 using namespace std;
+#define BUFFER_SIZE 10000
 
 class HTTPReq {
 private:
@@ -258,13 +259,13 @@ int main(int argc, char *argv[]) {
                 continue;
             }*/
             int cont = 0;
-            char msg[2000];
-            memset(msg, '\0', 2000);
+            char msg[BUFFER_SIZE];
+            memset(msg, '\0', BUFFER_SIZE);
             std::cout << bytecode;
             std::cout << "bytes in header: " << bytecode.size() << std::endl;
             //loop para envio do file
             while(cont < file_size){
-                int readNum = 1500 - bytecode.size();
+                int readNum = BUFFER_SIZE - bytecode.size();
                 //fread(msg, sizeof(char), readNum, file);
                 is.read (msg,readNum);
                 std::cout << "bytes lidos: " << readNum << std::endl;
@@ -274,13 +275,13 @@ int main(int argc, char *argv[]) {
                 int byte_size;
 
 
-                if ((byte_size = send(clientSockfd, bytecode.c_str(), 1500, 0)) == -1) {
+                if ((byte_size = send(clientSockfd, bytecode.c_str(), BUFFER_SIZE, 0)) == -1) {
                     perror("send");
                     return 6;
                 }
                 std::cout << "bytes enviados: " << byte_size << std::endl;
                 bytecode = "\0";
-                memset(msg, '\0',2000);
+                memset(msg, '\0',BUFFER_SIZE);
 
                 cont += byte_size;
                 std::cout << "cont: " << cont << std::endl;

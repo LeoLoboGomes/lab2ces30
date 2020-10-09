@@ -14,6 +14,7 @@
 #include <vector>
 
 using namespace std;
+#define BUFFER_SIZE 10000
 
 
 class HTTPReq {
@@ -152,8 +153,8 @@ void addrDNS(char *host, char *outStr){
 string cleanBuffer(char *buf) {
   string ans = buf;
 
-  if(ans.size() > 1500)
-    ans = ans.substr(0,1500);
+  if(ans.size() > BUFFER_SIZE)
+    ans = ans.substr(0,BUFFER_SIZE);
 
   return ans;
 }
@@ -253,7 +254,7 @@ int main(int argc, char *argv[]) {
     // input eh para a leitura do teclado
     // ss eh para receber o valor de volta
     bool isEnd = false;
-    char buf[1500] = {0};
+    char buf[BUFFER_SIZE] = {0};
     std::string input;
     std::stringstream ss;
 
@@ -277,7 +278,7 @@ int main(int argc, char *argv[]) {
             string msg;
             HTTPReq resp;
             //Receber mensagem que contem HTTP header
-            if (recv(sockfd, buf, 1500, 0) == -1) {
+            if (recv(sockfd, buf, BUFFER_SIZE, 0) == -1) {
                 perror("recv");
                 return 5;
             }
@@ -312,7 +313,7 @@ int main(int argc, char *argv[]) {
                     msg = "";
 
                     // recebe no buffer uma certa quantidade de bytes ate 20
-                    if ((bytes_recebidos = recv(sockfd, buf, 1500, 0) == -1)) {
+                    if ((bytes_recebidos = recv(sockfd, buf, BUFFER_SIZE, 0) == -1)) {
                         perror("recv");
                         return 5;
                     }
@@ -322,7 +323,7 @@ int main(int argc, char *argv[]) {
                     msg = cleanBuffer(buf);
                     ofs << msg;
                     std::cout << "tamanho da mensagem recebida: " << msg.size() << std::endl;
-                    
+
                     cont += msg.size();
                     std::cout << "bytes restantes: " << clength - cont << std::endl;
 
