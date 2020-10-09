@@ -149,6 +149,15 @@ void addrDNS(char *host, char *outStr){
     freeaddrinfo(res); // libera a memoria alocada dinamicamente para "res"
 }
 
+string cleanBuffer(char *buf) {
+  string ans = buf;
+
+  if(ans.size() > 1500)
+    ans = ans.substr(0,1500);
+
+  return ans;
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         std::cerr << "usage: web-server [URL]" << std::endl;
@@ -273,7 +282,8 @@ int main(int argc, char *argv[]) {
                 return 5;
             }
 
-            msg = buf;
+            msg = cleanBuffer(buf);
+
             resp.parse(msg);
             std::cout << "tamanho do arquivo total: " << resp.getContentLenght() << endl;
             std::cout << "tamanho da mensagem com header: " << msg.size() << endl;
@@ -306,10 +316,13 @@ int main(int argc, char *argv[]) {
                         perror("recv");
                         return 5;
                     }
+
                     std::cout << "Bytes recebidos: " << bytes_recebidos << std::endl;
-                    msg = buf;
+
+                    msg = cleanBuffer(buf);
                     ofs << msg;
                     std::cout << "tamanho da mensagem recebida: " << msg.size() << std::endl;
+                    
                     cont += msg.size();
                     std::cout << "bytes restantes: " << clength - cont << std::endl;
 
