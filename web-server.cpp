@@ -161,7 +161,8 @@ void *connection_handler(void *clientSockfd) {
       // recebe ate 100 bytes do cliente remoto
       if (recv(sock, buf, 100, 0) == -1) {
         perror("recv");
-        return;
+        int ret_value = 5;
+        return (void*) ret_value;
       }
 
       // Imprime o valor recebido no servidor antes de reenviar
@@ -217,7 +218,8 @@ void *connection_handler(void *clientSockfd) {
 
               if ((byte_size = send(sock, bytecode.c_str(), BUFFER_SIZE, 0)) == -1) {
                   perror("send");
-                  return;
+                  int ret_value = 6;
+                  return (void*) ret_value;
               }
               std::cout << "bytes enviados: " << byte_size << std::endl;
               bytecode = "\0";
@@ -244,7 +246,8 @@ void *connection_handler(void *clientSockfd) {
           bytecode = response.encode();
           if ((byte_size = send(sock, bytecode.c_str(), 100, 0)) == -1) {
               perror("send");
-              return;
+              int ret_value = 6;
+              return (void*) ret_value;
           }
 
           continue;
