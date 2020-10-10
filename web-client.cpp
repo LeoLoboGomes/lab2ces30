@@ -15,7 +15,6 @@
 #include <vector>
 
 using namespace std;
-#define BUFFER_SIZE 10000
 
 
 class HTTPReq {
@@ -154,19 +153,14 @@ void addrDNS(char *host, char *outStr){
 string cleanBuffer(char *buf) {
   string ans = buf;
 
-  if(ans.size() > BUFFER_SIZE)
-    ans = ans.substr(0,BUFFER_SIZE);
+  if(ans.size() > 1500)
+    ans = ans.substr(0,1500);
 
   return ans;
 }
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        std::cerr << "usage: web-server [URL]" << std::endl;
-        return 1;
-    }
-
-    string url = argv[1];
+vector<string> getInformation(string url){
+    vector<string> vec;
     string address;
     string port;
     string object;
@@ -199,6 +193,38 @@ int main(int argc, char *argv[]) {
         }
 
     }
+    vec.push_back(address);
+    vec.push_back(port);
+    vec.push_back(object);
+    return vec;
+}
+
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        std::cerr << "usage: web-server [URL]" << std::endl;
+        return 1;
+    }
+
+    string url = argv[1];
+    string address;
+    string port;
+    string object;
+    vector<string> aux;
+    vector<string> objectList;
+
+    for(int i = 1; i < argc; i++){
+        url = argv[i];
+        aux = getInformation(url);
+        if(i == 1){
+            address = aux[0];
+            port = aux[1];
+            objectList.push_back(aux[2]);
+        } else {
+            objectList.push_back(aux[2]);
+        }
+    }
+
+    object = objectList[0];
 
     stringstream stream(port);
 
@@ -255,16 +281,20 @@ int main(int argc, char *argv[]) {
     // input eh para a leitura do teclado
     // ss eh para receber o valor de volta
     bool isEnd = false;
-    char buf[BUFFER_SIZE] = {0};
+    char buf[1500] = {0};
     std::string input;
     std::stringstream ss;
 
-    //Criar HTTP request
-    HTTPReq request(object, "req");
-    string bytecode;
-    bytecode = request.encode();
 
+
+    //transformar este while num for que itera sobe a objectList e trocar os object por objectList[i]
+    //Apagar essa leitura de input para deixar os envios automaticos (pode utilizar para teste por enquanto)
     while (!isEnd) {
+        //Criar HTTP request
+        HTTPReq request(object, "req");
+        string bytecode;
+        bytecode = request.encode();
+
         // leitura do teclado
         std::cout << "send(y/n): ";
         std::cin >> input;
@@ -279,7 +309,7 @@ int main(int argc, char *argv[]) {
             string msg;
             HTTPReq resp;
             //Receber mensagem que contem HTTP header
-            if (recv(sockfd, buf, BUFFER_SIZE, 0) == -1) {
+            if (recv(sockfd, buf, 1500, 0) == -1) {
                 perror("recv");
                 return 5;
             }
@@ -314,7 +344,7 @@ int main(int argc, char *argv[]) {
                     msg = "";
 
                     // recebe no buffer uma certa quantidade de bytes ate 20
-                    if ((bytes_recebidos = recv(sockfd, buf, BUFFER_SIZE, 0) == -1)) {
+                    if ((bytes_recebidos = recv(sockfd, buf, 1500, 0) == -1)) {
                         perror("recv");
                         return 5;
                     }
@@ -324,7 +354,7 @@ int main(int argc, char *argv[]) {
                     msg = cleanBuffer(buf);
                     ofs << msg;
                     std::cout << "tamanho da mensagem recebida: " << msg.size() << std::endl;
-
+                    
                     cont += msg.size();
                     std::cout << "bytes restantes: " << clength - cont << std::endl;
 
@@ -334,6 +364,8 @@ int main(int argc, char *argv[]) {
             } else if(resp.getStatus().compare("404") == 0) {
               std::cout << buf << std::endl;
               std::cout << object.substr(1,object.length()) << " was not found" << std::endl;
+            } else if(resp.getStatus().compare("400") == 0){
+                std::cout << buf << std::endl;
             }
             msg = "";
         }
