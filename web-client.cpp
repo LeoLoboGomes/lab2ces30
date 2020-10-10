@@ -361,11 +361,13 @@ int main(int argc, char *argv[]) {
                 }
                 std::cout << "saiu do loop" << endl;
                 ofs.close();
+                break;
             } else if(resp.getStatus().compare("404") == 0) {
               std::cout << buf << std::endl;
               std::cout << object.substr(1,object.length()) << " was not found" << std::endl;
             } else if(resp.getStatus().compare("400") == 0){
                 std::cout << buf << std::endl;
+                break;
             }
             msg = "";
         }
