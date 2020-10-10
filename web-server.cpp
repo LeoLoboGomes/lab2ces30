@@ -195,8 +195,14 @@ void *connection_handler(void *arg) {
       if(filename.length() < 1)
         break;
 
+ 
+      const std::string subfilepath = filename.substr(1);
+
+
+      std::cout << "Filename substr: '" << filepath << "'" << std::endl;
+
       //Cheque para filename com "/" no meio (possivel exploit)
-      if(filename.substr(1,filename.length()-1).find("/")) {
+      if(subfilepath.find("/") != std::string::npos) {
         response.setStatus("400");
         //do something
         int byte_size;

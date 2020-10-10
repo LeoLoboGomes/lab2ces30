@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
-#include<pthread.h> 
+#include<pthread.h>
 
 #include <iostream>
 #include <sstream>
@@ -168,7 +168,7 @@ vector<string> getInformation(string url){
     int count = 0;
     object += '/';
     for(int i = 0; i < url.length(); i++){
-        if(url[i] == '/')
+        if(url[i] == '/' && count<3)
             count++;
         else if(count == 2 && url[i] == ':'){
             endHost = true;
@@ -354,7 +354,7 @@ int main(int argc, char *argv[]) {
                     msg = cleanBuffer(buf);
                     ofs << msg;
                     std::cout << "tamanho da mensagem recebida: " << msg.size() << std::endl;
-                    
+
                     cont += msg.size();
                     std::cout << "bytes restantes: " << clength - cont << std::endl;
 
