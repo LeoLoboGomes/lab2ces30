@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
+#include<pthread.h>
 
 #include <iostream>
 #include <sstream>
@@ -139,6 +140,114 @@ void addrDNS(char *host, char *outStr){
     freeaddrinfo(res); // libera a memoria alocada dinamicamente para "res"
 }
 
+void *connection_handler(void *clientSockfd) {
+  // faz leitura e escrita dos dados da conexao
+  // utiliza um buffer de 20 bytes (char)
+  bool isEnd = false;
+  char buf[100] = {0};
+  std::stringstream ss;
+
+  while (!isEnd) {
+      // zera a memoria do buffer
+      memset(buf, '\0', sizeof(buf));
+
+      // recebe ate 100 bytes do cliente remoto
+      if (recv(clientSockfd, buf, 100, 0) == -1) {
+        perror("recv");
+        return 5;
+      }
+
+      // Imprime o valor recebido no servidor antes de reenviar
+      // para o cliente de volta
+      ss << buf;
+      std::cout << buf;
+
+      //construção do objeto HTTP
+      string message(buf);
+      string bytecode;
+      HTTPReq response;
+      response.parse(message);
+      const std::string filename = response.getURL();
+      const std::string filepath = dirpath + filename;
+      struct stat statbuffer;
+      int file_size;
+
+      //Cheque para filename "/" para retorna index.html(to do)
+
+      //Cheque de existencia do arquivo pedido e set status
+      if(stat (filepath.c_str(), &statbuffer) == 0){
+          off_t size = statbuffer.st_size;
+          file_size = int(size);
+          response.setContentLength(int(size));
+          response.setStatus("200");
+
+          bytecode = response.encode();
+
+          std::ifstream is (filepath, std::ifstream::binary);
+          //abrir file e definir cont
+          /*FILE *file;
+          file = fopen(filepath.c_str(), "r");
+          if (file == NULL) {//response 404
+
+              continue;
+          }*/
+          int cont = 0;
+          char msg[BUFFER_SIZE];
+          memset(msg, '\0', BUFFER_SIZE);
+          std::cout << bytecode;
+          std::cout << "bytes in header: " << bytecode.size() << std::endl;
+          //loop para envio do file
+          while(cont < file_size){
+              int readNum = BUFFER_SIZE - bytecode.size();
+              //fread(msg, sizeof(char), readNum, file);
+              is.read (msg,readNum);
+              std::cout << "bytes lidos: " << readNum << std::endl;
+              string data = msg;
+              bytecode += data;
+              std::cout << "bytes in bytecode: " << bytecode.size() << std::endl;
+              int byte_size;
+
+
+              if ((byte_size = send(clientSockfd, bytecode.c_str(), BUFFER_SIZE, 0)) == -1) {
+                  perror("send");
+                  return 6;
+              }
+              std::cout << "bytes enviados: " << byte_size << std::endl;
+              bytecode = "\0";
+              memset(msg, '\0',BUFFER_SIZE);
+
+              cont += byte_size;
+              std::cout << "cont: " << cont << std::endl;
+          }
+
+          // envia de volta o buffer recebido como um echo
+
+
+          // o conteudo do buffer convertido para string pode
+          // ser comparado com palavras-chave
+          if (ss.str() == "close\n")
+            break;
+
+          // zera a string para receber a proxima
+          ss.str("");
+      } else {
+          response.setStatus("404");
+          //do something
+          int byte_size;
+          bytecode = response.encode();
+          if ((byte_size = send(clientSockfd, bytecode.c_str(), 100, 0)) == -1) {
+              perror("send");
+              return 6;
+          }
+
+          continue;
+      }
+  }
+
+  // fecha o socket
+  close(clientSockfd);
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 4) {
         std::cerr << "usage: web-server [HOST] [PORT] [TMP]" << std::endl;
@@ -150,7 +259,7 @@ int main(int argc, char *argv[]) {
     string dirpath = "." + dir;
 
     addrDNS(argv[1], address);
-    cout << address << " " << argv[2] << " "<< argv[3] << endl;
+    cout << address << " " << argv[2] << " " << argv[3] << endl;
 
     // cria um socket para IPv4 e usando protocolo de transporte TCP
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -195,124 +304,136 @@ int main(int argc, char *argv[]) {
     // clientSockfd eh a "socket diretamente com o cliente"
     struct sockaddr_in clientAddr;
     socklen_t clientAddrSize = sizeof(clientAddr);
-    int clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize);
 
-    if (clientSockfd == -1) {
-    perror("accept");
-    return 4;
+    pthread_t thread_id;
+
+    while(clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize)) {
+      std::cout << "Connection accepted" << std::endl;
+
+      if(pthread_create(&thread_id, NULL, connection_handler, (void*) &clientSockfd) < 0) {
+        perror("could not create thread");
+        return 1;
+      }
+
+      puts("Handler assigned");
     }
 
-    // usa um vetor de caracteres para preencher o endereço IP do cliente
-    char ipstr[INET_ADDRSTRLEN] = {'\0'};
-    inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
-    std::cout << "Accept a connection from: " << ipstr << ":" <<
-    ntohs(clientAddr.sin_port) << std::endl;
-
-    // faz leitura e escrita dos dados da conexao
-    // utiliza um buffer de 20 bytes (char)
-    bool isEnd = false;
-    char buf[100] = {0};
-    std::stringstream ss;
-
-    while (!isEnd) {
-        // zera a memoria do buffer
-        memset(buf, '\0', sizeof(buf));
-
-        // recebe ate 100 bytes do cliente remoto
-        if (recv(clientSockfd, buf, 100, 0) == -1) {
-          perror("recv");
-          return 5;
-        }
-
-        // Imprime o valor recebido no servidor antes de reenviar
-        // para o cliente de volta
-        ss << buf;
-        std::cout << buf;
-
-        //construção do objeto HTTP
-        string message(buf);
-        string bytecode;
-        HTTPReq response;
-        response.parse(message);
-        const std::string filename = response.getURL();
-        const std::string filepath = dirpath + filename;
-        struct stat statbuffer;
-        int file_size;
-
-        //Cheque para filename "/" para retorna index.html(to do)
-
-        //Cheque de existencia do arquivo pedido e set status
-        if(stat (filepath.c_str(), &statbuffer) == 0){
-            off_t size = statbuffer.st_size;
-            file_size = int(size);
-            response.setContentLength(int(size));
-            response.setStatus("200");
-
-            bytecode = response.encode();
-
-            std::ifstream is (filepath, std::ifstream::binary);
-            //abrir file e definir cont
-            /*FILE *file;
-            file = fopen(filepath.c_str(), "r");
-            if (file == NULL) {//response 404
-
-                continue;
-            }*/
-            int cont = 0;
-            char msg[BUFFER_SIZE];
-            memset(msg, '\0', BUFFER_SIZE);
-            std::cout << bytecode;
-            std::cout << "bytes in header: " << bytecode.size() << std::endl;
-            //loop para envio do file
-            while(cont < file_size){
-                int readNum = BUFFER_SIZE - bytecode.size();
-                //fread(msg, sizeof(char), readNum, file);
-                is.read (msg,readNum);
-                std::cout << "bytes lidos: " << readNum << std::endl;
-                string data = msg;
-                bytecode += data;
-                std::cout << "bytes in bytecode: " << bytecode.size() << std::endl;
-                int byte_size;
-
-
-                if ((byte_size = send(clientSockfd, bytecode.c_str(), BUFFER_SIZE, 0)) == -1) {
-                    perror("send");
-                    return 6;
-                }
-                std::cout << "bytes enviados: " << byte_size << std::endl;
-                bytecode = "\0";
-                memset(msg, '\0',BUFFER_SIZE);
-
-                cont += byte_size;
-                std::cout << "cont: " << cont << std::endl;
-            }
-
-            // envia de volta o buffer recebido como um echo
-
-
-            // o conteudo do buffer convertido para string pode
-            // ser comparado com palavras-chave
-            if (ss.str() == "close\n")
-              break;
-
-            // zera a string para receber a proxima
-            ss.str("");
-        } else {
-            response.setStatus("404");
-            //do something
-            int byte_size;
-            bytecode = response.encode();
-            if ((byte_size = send(clientSockfd, bytecode.c_str(), 100, 0)) == -1) {
-                perror("send");
-                return 6;
-            }
-
-            continue;
-        }
-    }
-
-    // fecha o socket
-    close(clientSockfd);
+    // if (clientSockfd == -1) {
+    //   perror("accept");
+    //   return 4;
+    // }
+    //
+    // // usa um vetor de caracteres para preencher o endereço IP do cliente
+    // char ipstr[INET_ADDRSTRLEN] = {'\0'};
+    // inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
+    // std::cout << "Accept a connection from: " << ipstr << ":" <<
+    // ntohs(clientAddr.sin_port) << std::endl;
+    //
+    // // faz leitura e escrita dos dados da conexao
+    // // utiliza um buffer de 20 bytes (char)
+    // bool isEnd = false;
+    // char buf[100] = {0};
+    // std::stringstream ss;
+    //
+    // while (!isEnd) {
+    //     // zera a memoria do buffer
+    //     memset(buf, '\0', sizeof(buf));
+    //
+    //     // recebe ate 100 bytes do cliente remoto
+    //     if (recv(clientSockfd, buf, 100, 0) == -1) {
+    //       perror("recv");
+    //       return 5;
+    //     }
+    //
+    //     // Imprime o valor recebido no servidor antes de reenviar
+    //     // para o cliente de volta
+    //     ss << buf;
+    //     std::cout << buf;
+    //
+    //     //construção do objeto HTTP
+    //     string message(buf);
+    //     string bytecode;
+    //     HTTPReq response;
+    //     response.parse(message);
+    //     const std::string filename = response.getURL();
+    //     const std::string filepath = dirpath + filename;
+    //     struct stat statbuffer;
+    //     int file_size;
+    //
+    //     //Cheque para filename "/" para retorna index.html(to do)
+    //
+    //     //Cheque de existencia do arquivo pedido e set status
+    //     if(stat (filepath.c_str(), &statbuffer) == 0){
+    //         off_t size = statbuffer.st_size;
+    //         file_size = int(size);
+    //         response.setContentLength(int(size));
+    //         response.setStatus("200");
+    //
+    //         bytecode = response.encode();
+    //
+    //         std::ifstream is (filepath, std::ifstream::binary);
+    //         //abrir file e definir cont
+    //         /*FILE *file;
+    //         file = fopen(filepath.c_str(), "r");
+    //         if (file == NULL) {//response 404
+    //
+    //             continue;
+    //         }*/
+    //         int cont = 0;
+    //         char msg[BUFFER_SIZE];
+    //         memset(msg, '\0', BUFFER_SIZE);
+    //         std::cout << bytecode;
+    //         std::cout << "bytes in header: " << bytecode.size() << std::endl;
+    //         //loop para envio do file
+    //         while(cont < file_size){
+    //             int readNum = BUFFER_SIZE - bytecode.size();
+    //             //fread(msg, sizeof(char), readNum, file);
+    //             is.read (msg,readNum);
+    //             std::cout << "bytes lidos: " << readNum << std::endl;
+    //             string data = msg;
+    //             bytecode += data;
+    //             std::cout << "bytes in bytecode: " << bytecode.size() << std::endl;
+    //             int byte_size;
+    //
+    //
+    //             if ((byte_size = send(clientSockfd, bytecode.c_str(), BUFFER_SIZE, 0)) == -1) {
+    //                 perror("send");
+    //                 return 6;
+    //             }
+    //             std::cout << "bytes enviados: " << byte_size << std::endl;
+    //             bytecode = "\0";
+    //             memset(msg, '\0',BUFFER_SIZE);
+    //
+    //             cont += byte_size;
+    //             std::cout << "cont: " << cont << std::endl;
+    //         }
+    //
+    //         // envia de volta o buffer recebido como um echo
+    //
+    //
+    //         // o conteudo do buffer convertido para string pode
+    //         // ser comparado com palavras-chave
+    //         if (ss.str() == "close\n")
+    //           break;
+    //
+    //         // zera a string para receber a proxima
+    //         ss.str("");
+    //     } else {
+    //         response.setStatus("404");
+    //         //do something
+    //         int byte_size;
+    //         bytecode = response.encode();
+    //         if ((byte_size = send(clientSockfd, bytecode.c_str(), 100, 0)) == -1) {
+    //             perror("send");
+    //             return 6;
+    //         }
+    //
+    //         continue;
+    //     }
+    // }
+    //
+    // // fecha o socket
+    // close(clientSockfd);
 
     return 0;
 }
