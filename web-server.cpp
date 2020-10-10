@@ -84,7 +84,7 @@ string HTTPReq::encode() {
         buffer += "\r\n";
         buffer += "\r\n";
     }else if (this->method.compare("res") == 0){
-        buffer += "HTTP/1.1 " + this->status + " ";
+        buffer += "HTTP/1.0 " + this->status + " ";
         if(this->status.compare("200") == 0){
             buffer += "OK";
         }else if(this->status.compare("404") == 0){
@@ -180,12 +180,15 @@ void *connection_handler(void *arg) {
       string bytecode;
       HTTPReq response;
       response.parse(message);
-      const std::string filename = response.getURL();
-      const std::string filepath = dirpath + filename;
+      std::string filename = response.getURL();
       struct stat statbuffer;
       int file_size;
 
       //Cheque para filename "/" para retorna index.html(to do)
+      if(filename.compare("/") == 0){
+          filename = filename + "index.html";
+      }
+      const std::string filepath = dirpath + filename;
 
       //Cheque de existencia do arquivo pedido e set status
       if(stat (filepath.c_str(), &statbuffer) == 0){
