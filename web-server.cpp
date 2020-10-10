@@ -155,7 +155,7 @@ void *connection_handler(void *arg) {
   int sock = argument->sock;
   string dirpath = argument->dirpath;
   bool isEnd = false;
-  char buf[100] = {0};
+  char buf[BUFFER_SIZE] = {0};
   std::stringstream ss;
   // std::cout << "Initialized variables" << std::endl;
 
