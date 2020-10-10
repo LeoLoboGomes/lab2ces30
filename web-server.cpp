@@ -170,12 +170,12 @@ void *connection_handler(void *arg) {
         std::cout << "Here, at ret_value = 5" << std::endl;
         int ret_value = 5;
         cout << "saiu da thread" << endl;
-        break;
+        return (void*) ret_value;
       }
 
       // Imprime o valor recebido no servidor antes de reenviar
       // para o cliente de volta
-    
+
 
       //construção do objeto HTTP
       string message(buf);
@@ -191,11 +191,13 @@ void *connection_handler(void *arg) {
           filename = filename + "index.html";
       }
       const std::string filepath = dirpath + filename;
-      
-      if(filename.length() < 1)
-        break;
 
- 
+      if(filename.length() < 1) {
+        int ret_value = 1;
+        return (void*) ret_value;
+      }
+
+
       const std::string subfilepath = filename.substr(1);
 
 
@@ -211,7 +213,7 @@ void *connection_handler(void *arg) {
             perror("send");
             std::cout << "Here, at ret_value = 6" << std::endl;
             int ret_value = 6;
-            break;
+            return (void*) ret_value;
         }
       } else {
         //Cheque de existencia do arquivo pedido e set status
@@ -252,7 +254,7 @@ void *connection_handler(void *arg) {
                     perror("send");
                     std::cout << "Here, at ret_value = 6" << std::endl;
                     int ret_value = 6;
-                    break;
+                    return (void*)ret_value;
                 }
                 std::cout << "bytes enviados: " << byte_size << std::endl;
                 bytecode = "\0";
@@ -281,7 +283,7 @@ void *connection_handler(void *arg) {
                 perror("send");
                 std::cout << "Here, at ret_value = 6" << std::endl;
                 int ret_value = 6;
-                break;
+                return (void*) ret_value;
             }
             cout << filename << endl;
             continue;
