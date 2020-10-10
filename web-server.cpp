@@ -190,9 +190,13 @@ void *connection_handler(void *arg) {
           filename = filename + "index.html";
       }
       const std::string filepath = dirpath + filename;
+      const std::string subfilepath = filename.substr(1);
+
+
+      std::cout << "Filename substr: '" << filepath << "'" << std::endl;
 
       //Cheque para filename com "/" no meio (possivel exploit)
-      if(filename.substr(1,filename.length()-1).find("/")) {
+      if(subfilepath.find("/") != std::string::npos) {
         response.setStatus("400");
         //do something
         int byte_size;
