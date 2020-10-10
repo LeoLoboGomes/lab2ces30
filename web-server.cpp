@@ -145,11 +145,13 @@ void addrDNS(char *host, char *outStr){
     freeaddrinfo(res); // libera a memoria alocada dinamicamente para "res"
 }
 
-void *connection_handler(void *clientSockfd) {
+void *connection_handler(void *arg) {
   // faz leitura e escrita dos dados da conexao
   // utiliza um buffer de 20 bytes (char)
 
-  int sock = *(int *)clientSockfd;
+  threadArg *argument = (threadArg *)arg;
+  int sock = argument->sock;
+  string dirpath = argument->dirpath;
   bool isEnd = false;
   char buf[100] = {0};
   std::stringstream ss;
@@ -317,10 +319,14 @@ int main(int argc, char *argv[]) {
 
     pthread_t thread_id;
 
+
+
     while(int clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize)) {
       std::cout << "Connection accepted" << std::endl;
-
-      if(pthread_create(&thread_id, NULL, connection_handler, (void*) &clientSockfd) < 0) {
+      threadArg *arg;
+      arg->dirpath = dirpath;
+      arg->sock = clientSockfd;
+      if(pthread_create(&thread_id, NULL, connection_handler, (void*) &arg) < 0) {
         perror("could not create thread");
         return 1;
       }
