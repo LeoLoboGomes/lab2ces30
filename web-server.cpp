@@ -323,9 +323,10 @@ int main(int argc, char *argv[]) {
 
     while(int clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize)) {
       std::cout << "Connection accepted" << std::endl;
-      threadArg *arg;
+      threadArg *arg = new threadArg();
       arg->dirpath = dirpath;
       arg->sock = clientSockfd;
+      std::cout << "Reaching here" << std::endl;
       if(pthread_create(&thread_id, NULL, connection_handler, (void*) &arg) < 0) {
         perror("could not create thread");
         return 1;
