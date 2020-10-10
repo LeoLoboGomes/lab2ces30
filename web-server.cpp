@@ -143,6 +143,8 @@ void addrDNS(char *host, char *outStr){
 void *connection_handler(void *clientSockfd) {
   // faz leitura e escrita dos dados da conexao
   // utiliza um buffer de 20 bytes (char)
+
+  int sock = *(int *)clientSockfd;
   bool isEnd = false;
   char buf[100] = {0};
   std::stringstream ss;
@@ -152,9 +154,9 @@ void *connection_handler(void *clientSockfd) {
       memset(buf, '\0', sizeof(buf));
 
       // recebe ate 100 bytes do cliente remoto
-      if (recv(clientSockfd, buf, 100, 0) == -1) {
+      if (recv(sock, buf, 100, 0) == -1) {
         perror("recv");
-        return 5;
+        return;
       }
 
       // Imprime o valor recebido no servidor antes de reenviar
@@ -208,9 +210,9 @@ void *connection_handler(void *clientSockfd) {
               int byte_size;
 
 
-              if ((byte_size = send(clientSockfd, bytecode.c_str(), BUFFER_SIZE, 0)) == -1) {
+              if ((byte_size = send(sock, bytecode.c_str(), BUFFER_SIZE, 0)) == -1) {
                   perror("send");
-                  return 6;
+                  return;
               }
               std::cout << "bytes enviados: " << byte_size << std::endl;
               bytecode = "\0";
@@ -235,9 +237,9 @@ void *connection_handler(void *clientSockfd) {
           //do something
           int byte_size;
           bytecode = response.encode();
-          if ((byte_size = send(clientSockfd, bytecode.c_str(), 100, 0)) == -1) {
+          if ((byte_size = send(sock, bytecode.c_str(), 100, 0)) == -1) {
               perror("send");
-              return 6;
+              return;
           }
 
           continue;
@@ -245,7 +247,7 @@ void *connection_handler(void *clientSockfd) {
   }
 
   // fecha o socket
-  close(clientSockfd);
+  close(sock);
 }
 
 int main(int argc, char *argv[]) {
@@ -307,7 +309,7 @@ int main(int argc, char *argv[]) {
 
     pthread_t thread_id;
 
-    while(clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize)) {
+    while(int clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize)) {
       std::cout << "Connection accepted" << std::endl;
 
       if(pthread_create(&thread_id, NULL, connection_handler, (void*) &clientSockfd) < 0) {
