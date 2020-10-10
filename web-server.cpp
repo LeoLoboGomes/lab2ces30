@@ -19,6 +19,11 @@
 using namespace std;
 #define BUFFER_SIZE 10000
 
+struct threadArg {
+    string dirpath;
+    int sock;
+};
+
 class HTTPReq {
 private:
     string status;
