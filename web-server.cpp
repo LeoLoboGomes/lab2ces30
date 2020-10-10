@@ -150,11 +150,14 @@ void *connection_handler(void *arg) {
   // utiliza um buffer de 20 bytes (char)
 
   threadArg *argument = (threadArg *)arg;
+  // std::cout << "Thread argument is here: " << argument->dirpath << std::endl;
+  // std::cout << "Ok, that ended" << std::endl;
   int sock = argument->sock;
   string dirpath = argument->dirpath;
   bool isEnd = false;
   char buf[100] = {0};
   std::stringstream ss;
+  // std::cout << "Initialized variables" << std::endl;
 
   while (!isEnd) {
       // zera a memoria do buffer
@@ -322,12 +325,13 @@ int main(int argc, char *argv[]) {
 
 
     while(int clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize)) {
-      std::cout << "Connection accepted" << std::endl;
+      // std::cout << "Connection accepted" << std::endl;
       threadArg *arg = new threadArg();
       arg->dirpath = dirpath;
       arg->sock = clientSockfd;
-      std::cout << "Reaching here" << std::endl;
-      if(pthread_create(&thread_id, NULL, connection_handler, (void*) &arg) < 0) {
+      // std::cout << "Thread argument is here: " << arg->dirpath << std::endl;
+      // std::cout << "Reaching here" << std::endl;
+      if(pthread_create(&thread_id, NULL, connection_handler, (void*) arg) < 0) {
         perror("could not create thread");
         return 1;
       }
