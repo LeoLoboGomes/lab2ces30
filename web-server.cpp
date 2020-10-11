@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
-#include<pthread.h>
+#include <pthread.h>
+#include <fcntl.h>
 
 #include <iostream>
 #include <sstream>
@@ -38,6 +39,7 @@ public:
     string encode();
     void parse(std::string bytecode);
     string getURL();
+    void catMessage(string message, unsigned char *msg, unsigned char *outBuf, int readNum);
     HTTPReq();
     HTTPReq(string url, string method);
     HTTPReq(string status, string method, int length);
@@ -112,6 +114,11 @@ void HTTPReq::parse(string bytecode) {
     setMethod("res");
     setStatus("200");
     setContentLength(-1);
+}
+
+void HTTPReq::catMessage(string bytecode, unsigned char *msg, unsigned char *outBuf, int readNum){
+    std::copy (bytecode.begin(), bytecode.end(), outBuf);
+    memcpy(outBuf + bytecode.length(), msg, readNum);
 }
 
 void addrDNS(char *host, char *outStr){
@@ -191,6 +198,11 @@ void *connection_handler(void *arg) {
           filename = filename + "index.html";
       }
       const std::string filepath = dirpath + filename;
+      char cname[40];
+      for (int i = 0; i < filepath.length(); i++) { 
+          cname[i] = filepath[i]; 
+          cout << cname[i]; 
+      }  
 
       if(filename.length() < 1) {
         int ret_value = 1;
@@ -225,41 +237,46 @@ void *connection_handler(void *arg) {
 
             bytecode = response.encode();
 
-            std::ifstream is (filepath, std::ifstream::binary);
-            //abrir file e definir cont
-            /*FILE *file;
-            file = fopen(filepath.c_str(), "r");
-            if (file == NULL) {//response 404
+            //std::ifstream is (filepath, std::ifstream::binary);
+            int fdes = open(cname, O_RDONLY);
 
-                continue;
-            }*/
-            int cont = 0;
-            char msg[BUFFER_SIZE];
+            int cont = 0, bytes_read;
+            unsigned char msg[BUFFER_SIZE];
+            unsigned char sendBuffer[BUFFER_SIZE];
             memset(msg, '\0', BUFFER_SIZE);
             std::cout << bytecode;
             std::cout << "bytes in header: " << bytecode.size() << std::endl;
             //loop para envio do file
+            int teste = open("./testeSend.pdf", O_WRONLY | O_CREAT, 0644);
             while(cont < file_size){
                 int readNum = BUFFER_SIZE - bytecode.size();
                 //fread(msg, sizeof(char), readNum, file);
-                is.read (msg,readNum);
-                std::cout << "bytes lidos: " << readNum << std::endl;
-                string data = msg;
-                bytecode += data;
+                //is.read (msg,readNum);
+                bytes_read = read(fdes, &msg, readNum);
+                std::cout << "bytes lidos: " << bytes_read << std::endl;
+                int bytes_writen = write(teste, &msg, bytes_read);
+                if (bytes_writen == -1)
+                    cout << errno << endl;
+                cout << "bytes gravados: " << bytes_writen << endl;
+                string data = (char *)msg;
+
+                response.catMessage(bytecode, msg, sendBuffer, bytes_read);
+                
                 std::cout << "bytes in bytecode: " << bytecode.size() << std::endl;
+                //cout << sendBuffer << endl;
                 int byte_size;
 
-
-                if ((byte_size = send(sock, bytecode.c_str(), BUFFER_SIZE, 0)) == -1) {
+                if ((byte_size = send(sock, sendBuffer, bytes_read + bytecode.size(), 0)) == -1) {
                     perror("send");
                     std::cout << "Here, at ret_value = 6" << std::endl;
                     int ret_value = 6;
                     return (void*)ret_value;
                 }
                 std::cout << "bytes enviados: " << byte_size << std::endl;
+
                 bytecode = "\0";
                 memset(msg, '\0',BUFFER_SIZE);
-
+                memset(sendBuffer, '\0',BUFFER_SIZE);
                 cont += byte_size;
                 std::cout << "cont: " << cont << std::endl;
             }

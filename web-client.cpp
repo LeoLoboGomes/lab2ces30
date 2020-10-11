@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
-#include<pthread.h>
+#include <pthread.h>
+#include <fcntl.h>
 
 #include <iostream>
 #include <sstream>
@@ -29,7 +30,7 @@ public:
     void setStatus(string status);
     void setContentLength (int lenght);
     string encode();
-    void parse(std::string bytecode);
+    void parse(unsigned char *msg);
     string getURL();
     int getContentLenght();
     std::string getStatus();
@@ -104,19 +105,36 @@ string HTTPReq::encode() {
     return buffer;
 }
 
-void HTTPReq::parse(string bytecode) {
-    string lixo, status;
-    int content;
-    istringstream iss(bytecode);
-    iss >> lixo;
-    iss >> status;
-    iss >> lixo;
-    iss >> lixo;
-    iss >> content;
+void HTTPReq::parse(unsigned char * msg) {
+    char* token;
+    char* tok;
+    char* rest = (char *)msg;
+    bool isContent = false;
+    bool finished = false;
+    int i = 0, j = 0;
 
-    setMethod("res");
-    setStatus(status);
-    setContentLength(content);
+    while ((token = strtok_r(rest, "\r\n", &rest))) {
+        i++;
+        while ((tok = strtok_r(token, " ", &token))) {
+            j++;
+            if(isContent){
+                this->setContentLength(atoi(tok));
+                finished = true;
+                break;
+            }
+            
+            if(strcmp(tok, "Content-Length:") == 0){
+                isContent = true;
+            }
+            
+            if(i == 1 && j == 2){
+                string status = tok;
+                this->setStatus(status);
+            }
+        }
+        if(finished)
+            break;
+    }
 }
 
 void addrDNS(char *host, char *outStr){
@@ -281,7 +299,8 @@ int main(int argc, char *argv[]) {
     // input eh para a leitura do teclado
     // ss eh para receber o valor de volta
     bool isEnd = false;
-    char buf[1500] = {0};
+    unsigned char buf[1500] = {0};
+    unsigned char msgToWrt[1500] = {0};
     std::string input;
     std::stringstream ss;
 
@@ -308,59 +327,78 @@ int main(int argc, char *argv[]) {
             int cont = 0, clength, bytes_recebidos;
             string msg;
             HTTPReq resp;
+            cout << "recebendo" << endl;
             //Receber mensagem que contem HTTP header
-            if (recv(sockfd, buf, 1500, 0) == -1) {
+            if ((bytes_recebidos = recv(sockfd, buf, 1500, 0)) == -1) {
                 perror("recv");
                 return 5;
             }
 
-            msg = cleanBuffer(buf);
 
-            resp.parse(msg);
+            msg = cleanBuffer((char *)buf);
+
+            cout << "fazendo parse" << endl;
+            resp.parse(buf);
             std::cout << "tamanho do arquivo total: " << resp.getContentLenght() << endl;
-            std::cout << "tamanho da mensagem com header: " << msg.size() << endl;
             if(resp.getStatus().compare("200") == 0){
                 clength = resp.getContentLenght();
                 std::string::iterator aux;
                 //começar a gravar file
+                int sizeHead = 0;
                 for (std::string::iterator it=msg.begin(); it!=msg.end(); ++it){
+                    sizeHead++;
                     if(*it == '\r' && *(it + 1) == '\n' && *(it + 2) == '\r' && *(it + 3) == '\n'){
-                        //it eh o iterator ond começa a linha em branco
-                        //it + 4 eh ond começa o file
-                        aux = (it + 4);
+                        sizeHead += 3;
                         break;
                     }
                 }
-                auto str = std::string(aux, msg.end());
-                std::cout << "str: " << str << std::endl;
-                cont += str.size();
-                string filename = "." + object;
-                std::ofstream ofs(filename, std::ofstream::out);
-                ofs << str;
+                std::cout << sizeHead << endl;
+                memmove(msgToWrt, buf + sizeHead, 1500 - sizeHead);
 
-                while(cont != clength){
+                string filename = "." + object;
+                char cname[40];
+                for (int i = 0; i < filename.length(); i++) { 
+                    cname[i] = filename[i]; 
+                }
+                int fw = open(cname, O_WRONLY | O_CREAT, 0644);
+                cout << cname << endl;
+
+                int bytes_writen = write(fw, &msgToWrt, 1500 - sizeHead);
+                if (bytes_writen == -1)
+                    cout << errno << endl;
+                cout << "bytes gravados: " << bytes_writen << endl;
+                
+
+                cont += bytes_writen;
+                while(cont < clength){
                     // zera o buffer
                     memset(buf, '\0', sizeof(buf));
+                    memset(msgToWrt, '\0', sizeof(msgToWrt));
                     msg = "";
 
                     // recebe no buffer uma certa quantidade de bytes ate 20
-                    if ((bytes_recebidos = recv(sockfd, buf, 1500, 0) == -1)) {
+                    if ((bytes_recebidos = recv(sockfd, buf, 1500, 0)) == -1) {
                         perror("recv");
                         return 5;
                     }
 
-                    std::cout << "Bytes recebidos: " << bytes_recebidos << std::endl;
 
-                    msg = cleanBuffer(buf);
-                    ofs << msg;
-                    std::cout << "tamanho da mensagem recebida: " << msg.size() << std::endl;
+                    //msg = cleanBuffer(buf);
+                    //ofs << msg;
+                    cout << "bytes gravados: " << bytes_recebidos << endl;
 
-                    cont += msg.size();
+                    memmove(msgToWrt, buf, bytes_recebidos);
+                    bytes_writen = write(fw, &msgToWrt, bytes_recebidos);
+                    if (bytes_writen == -1)
+                        cout << errno << endl;
+                    cont += bytes_recebidos;
                     std::cout << "bytes restantes: " << clength - cont << std::endl;
+                    cout << "bytes gravados: " << bytes_writen << endl;
+                    
 
                 }
                 std::cout << "saiu do loop" << endl;
-                ofs.close();
+                close(fw);
                 break;
             } else if(resp.getStatus().compare("404") == 0) {
               std::cout << buf << std::endl;
@@ -370,6 +408,7 @@ int main(int argc, char *argv[]) {
                 break;
             }
             msg = "";
+            
         }
 
         // se a string tiver o valor close, sair do loop de eco
