@@ -314,102 +314,96 @@ int main(int argc, char *argv[]) {
         string bytecode;
         bytecode = request.encode();
 
-        // leitura do teclado
-        std::cout << "send(y/n): ";
-        std::cin >> input;
-        if(input.compare("y") == 0){
-            // converte a string lida em vetor de bytes
-            // com o tamanho do vetor de caracteres
-            if (send(sockfd, bytecode.c_str(), bytecode.size(), 0) == -1) {
-                perror("send");
-                return 4;
-            }
-            int cont = 0, clength, bytes_recebidos;
-            string msg;
-            HTTPReq resp;
-            cout << "recebendo" << endl;
-            //Receber mensagem que contem HTTP header
-            if ((bytes_recebidos = recv(sockfd, buf, 1500, 0)) == -1) {
-                perror("recv");
-                return 5;
-            }
+        // converte a string lida em vetor de bytes
+        // com o tamanho do vetor de caracteres
+        if (send(sockfd, bytecode.c_str(), bytecode.size(), 0) == -1) {
+            perror("send");
+            return 4;
+        }
+        int cont = 0, clength, bytes_recebidos;
+        string msg;
+        HTTPReq resp;
+        cout << "recebendo" << endl;
+        //Receber mensagem que contem HTTP header
+        if ((bytes_recebidos = recv(sockfd, buf, 1500, 0)) == -1) {
+            perror("recv");
+            return 5;
+        }
 
 
-            msg = cleanBuffer((char *)buf);
+        msg = cleanBuffer((char *)buf);
 
-            cout << "fazendo parse" << endl;
-            resp.parse(buf);
-            std::cout << "tamanho do arquivo total: " << resp.getContentLenght() << endl;
-            if(resp.getStatus().compare("200") == 0){
-                clength = resp.getContentLenght();
-                std::string::iterator aux;
-                //começar a gravar file
-                int sizeHead = 0;
-                for (std::string::iterator it=msg.begin(); it!=msg.end(); ++it){
-                    sizeHead++;
-                    if(*it == '\r' && *(it + 1) == '\n' && *(it + 2) == '\r' && *(it + 3) == '\n'){
-                        sizeHead += 3;
-                        break;
-                    }
+        cout << "fazendo parse" << endl;
+        resp.parse(buf);
+        std::cout << "tamanho do arquivo total: " << resp.getContentLenght() << endl;
+        if(resp.getStatus().compare("200") == 0){
+            clength = resp.getContentLenght();
+            std::string::iterator aux;
+            //começar a gravar file
+            int sizeHead = 0;
+            for (std::string::iterator it=msg.begin(); it!=msg.end(); ++it){
+                sizeHead++;
+                if(*it == '\r' && *(it + 1) == '\n' && *(it + 2) == '\r' && *(it + 3) == '\n'){
+                    sizeHead += 3;
+                    break;
                 }
-                std::cout << sizeHead << endl;
-                memmove(msgToWrt, buf + sizeHead, 1500 - sizeHead);
+            }
+            std::cout << sizeHead << endl;
+            memmove(msgToWrt, buf + sizeHead, 1500 - sizeHead);
 
-                string filename = "." + objectList[k];
-                char cname[40];
-                for (int i = 0; i < filename.length(); i++) {
-                    cname[i] = filename[i];
+            string filename = "." + objectList[k];
+            char cname[40];
+            for (int i = 0; i < filename.length(); i++) {
+                cname[i] = filename[i];
+            }
+            int fw = open(cname, O_WRONLY | O_CREAT, 0644);
+            cout << cname << endl;
+
+            int bytes_writen = write(fw, &msgToWrt, 1500 - sizeHead);
+            if (bytes_writen == -1)
+                cout << errno << endl;
+            cout << "bytes gravados: " << bytes_writen << endl;
+
+
+            cont += bytes_writen;
+            while(cont < clength){
+                // zera o buffer
+                memset(buf, '\0', sizeof(buf));
+                memset(msgToWrt, '\0', sizeof(msgToWrt));
+                msg = "";
+
+                // recebe no buffer uma certa quantidade de bytes ate 20
+                if ((bytes_recebidos = recv(sockfd, buf, 1500, 0)) == -1) {
+                    perror("recv");
+                    return 5;
                 }
-                int fw = open(cname, O_WRONLY | O_CREAT, 0644);
-                cout << cname << endl;
 
-                int bytes_writen = write(fw, &msgToWrt, 1500 - sizeHead);
+
+                //msg = cleanBuffer(buf);
+                //ofs << msg;
+                cout << "bytes gravados: " << bytes_recebidos << endl;
+
+                memmove(msgToWrt, buf, bytes_recebidos);
+                bytes_writen = write(fw, &msgToWrt, bytes_recebidos);
                 if (bytes_writen == -1)
                     cout << errno << endl;
+                cont += bytes_recebidos;
+                std::cout << "bytes restantes: " << clength - cont << std::endl;
                 cout << "bytes gravados: " << bytes_writen << endl;
 
 
-                cont += bytes_writen;
-                while(cont < clength){
-                    // zera o buffer
-                    memset(buf, '\0', sizeof(buf));
-                    memset(msgToWrt, '\0', sizeof(msgToWrt));
-                    msg = "";
-
-                    // recebe no buffer uma certa quantidade de bytes ate 20
-                    if ((bytes_recebidos = recv(sockfd, buf, 1500, 0)) == -1) {
-                        perror("recv");
-                        return 5;
-                    }
-
-
-                    //msg = cleanBuffer(buf);
-                    //ofs << msg;
-                    cout << "bytes gravados: " << bytes_recebidos << endl;
-
-                    memmove(msgToWrt, buf, bytes_recebidos);
-                    bytes_writen = write(fw, &msgToWrt, bytes_recebidos);
-                    if (bytes_writen == -1)
-                        cout << errno << endl;
-                    cont += bytes_recebidos;
-                    std::cout << "bytes restantes: " << clength - cont << std::endl;
-                    cout << "bytes gravados: " << bytes_writen << endl;
-
-
-                }
-                std::cout << "saiu do loop" << endl;
-                close(fw);
-                break;
-            } else if(resp.getStatus().compare("404") == 0) {
-              std::cout << buf << std::endl;
-              std::cout << objectList[k].substr(1,objectList[k].length()) << " was not found" << std::endl;
-            } else if(resp.getStatus().compare("400") == 0){
-                std::cout << buf << std::endl;
-                break;
             }
-            msg = "";
-
+            std::cout << "saiu do loop" << endl;
+            close(fw);
+            break;
+        } else if(resp.getStatus().compare("404") == 0) {
+            std::cout << buf << std::endl;
+            std::cout << objectList[k].substr(1,objectList[k].length()) << " was not found" << std::endl;
+        } else if(resp.getStatus().compare("400") == 0){
+            std::cout << buf << std::endl;
+            break;
         }
+        msg = "";
 
         // se a string tiver o valor close, sair do loop de eco
         if (ss.str() == "close\n")
