@@ -1,22 +1,20 @@
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
-#include <netdb.h>
+#include <pthread.h>
+#include <iostream>
 #include <string.h>
+#include <unistd.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <errno.h>
-#include <unistd.h>
-#include <pthread.h>
 #include <fcntl.h>
-
-#include <iostream>
 #include <sstream>
 #include <fstream>
 #include <vector>
 
 using namespace std;
-
 
 class HTTPReq {
 private:
@@ -122,11 +120,9 @@ void HTTPReq::parse(unsigned char * msg) {
                 finished = true;
                 break;
             }
-
             if(strcmp(tok, "Content-Length:") == 0){
                 isContent = true;
             }
-
             if(i == 1 && j == 2){
                 string status = tok;
                 this->setStatus(status);
@@ -170,10 +166,8 @@ void addrDNS(char *host, char *outStr){
 
 string cleanBuffer(char *buf) {
   string ans = buf;
-
   if(ans.size() > 1500)
     ans = ans.substr(0,1500);
-
   return ans;
 }
 
@@ -209,7 +203,6 @@ vector<string> getInformation(string url){
             beginObject = true;
             endPort = true;
         }
-
     }
     vec.push_back(address);
     vec.push_back(port);
@@ -296,16 +289,11 @@ int main(int argc, char *argv[]) {
 
     // trecho de código para leitura e envio de dados nessa conexao
     // buffer eh o buffer de dados a ser recebido no socket com 20 bytes
-    // input eh para a leitura do teclado
     // ss eh para receber o valor de volta
     bool isEnd = false;
     unsigned char buf[1500] = {0};
     unsigned char msgToWrt[1500] = {0};
-    std::string input;
     std::stringstream ss;
-
-
-
 
     int L = sizeof(objectList);
     for (int k = 0; k < L; k++) {
@@ -329,7 +317,6 @@ int main(int argc, char *argv[]) {
             perror("recv");
             return 5;
         }
-
 
         msg = cleanBuffer((char *)buf);
 
@@ -364,7 +351,6 @@ int main(int argc, char *argv[]) {
                 cout << errno << endl;
             cout << "bytes gravados: " << bytes_writen << endl;
 
-
             cont += bytes_writen;
             while(cont < clength){
                 // zera o buffer
@@ -378,9 +364,6 @@ int main(int argc, char *argv[]) {
                     return 5;
                 }
 
-
-                //msg = cleanBuffer(buf);
-                //ofs << msg;
                 cout << "bytes gravados: " << bytes_recebidos << endl;
 
                 memmove(msgToWrt, buf, bytes_recebidos);
@@ -390,8 +373,6 @@ int main(int argc, char *argv[]) {
                 cont += bytes_recebidos;
                 std::cout << "bytes restantes: " << clength - cont << std::endl;
                 cout << "bytes gravados: " << bytes_writen << endl;
-
-
             }
             std::cout << "saiu do loop" << endl;
             close(fw);
