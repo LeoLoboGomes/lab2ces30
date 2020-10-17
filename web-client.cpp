@@ -122,11 +122,11 @@ void HTTPReq::parse(unsigned char * msg) {
                 finished = true;
                 break;
             }
-            
+
             if(strcmp(tok, "Content-Length:") == 0){
                 isContent = true;
             }
-            
+
             if(i == 1 && j == 2){
                 string status = tok;
                 this->setStatus(status);
@@ -306,11 +306,11 @@ int main(int argc, char *argv[]) {
 
 
 
-    //transformar este while num for que itera sobe a objectList e trocar os object por objectList[i]
-    //Apagar essa leitura de input para deixar os envios automaticos (pode utilizar para teste por enquanto)
-    while (!isEnd) {
+
+    int L = sizeof(objectList);
+    for (int k = 0; k < L; k++) {
         //Criar HTTP request
-        HTTPReq request(object, "req");
+        HTTPReq request(objectList[k], "req");
         string bytecode;
         bytecode = request.encode();
 
@@ -355,10 +355,10 @@ int main(int argc, char *argv[]) {
                 std::cout << sizeHead << endl;
                 memmove(msgToWrt, buf + sizeHead, 1500 - sizeHead);
 
-                string filename = "." + object;
+                string filename = "." + objectList[k];
                 char cname[40];
-                for (int i = 0; i < filename.length(); i++) { 
-                    cname[i] = filename[i]; 
+                for (int i = 0; i < filename.length(); i++) {
+                    cname[i] = filename[i];
                 }
                 int fw = open(cname, O_WRONLY | O_CREAT, 0644);
                 cout << cname << endl;
@@ -367,7 +367,7 @@ int main(int argc, char *argv[]) {
                 if (bytes_writen == -1)
                     cout << errno << endl;
                 cout << "bytes gravados: " << bytes_writen << endl;
-                
+
 
                 cont += bytes_writen;
                 while(cont < clength){
@@ -394,7 +394,7 @@ int main(int argc, char *argv[]) {
                     cont += bytes_recebidos;
                     std::cout << "bytes restantes: " << clength - cont << std::endl;
                     cout << "bytes gravados: " << bytes_writen << endl;
-                    
+
 
                 }
                 std::cout << "saiu do loop" << endl;
@@ -402,13 +402,13 @@ int main(int argc, char *argv[]) {
                 break;
             } else if(resp.getStatus().compare("404") == 0) {
               std::cout << buf << std::endl;
-              std::cout << object.substr(1,object.length()) << " was not found" << std::endl;
+              std::cout << objectList[k].substr(1,objectList[k].length()) << " was not found" << std::endl;
             } else if(resp.getStatus().compare("400") == 0){
                 std::cout << buf << std::endl;
                 break;
             }
             msg = "";
-            
+
         }
 
         // se a string tiver o valor close, sair do loop de eco
