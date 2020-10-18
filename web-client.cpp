@@ -296,7 +296,6 @@ int main(int argc, char *argv[]) {
     std::stringstream ss;
 
     int L = objectList.size();
-    cout << L << endl;
     for (int k = 0; k < L; k++) {
         //Criar HTTP request
         HTTPReq request(objectList[k], "req");
@@ -312,7 +311,7 @@ int main(int argc, char *argv[]) {
         int cont = 0, clength, bytes_recebidos;
         string msg;
         HTTPReq resp;
-        cout << "recebendo" << endl;
+        cout << "Recebendo..." << endl;
         //Receber mensagem que contem HTTP header
         if ((bytes_recebidos = recv(sockfd, buf, 1500, 0)) == -1) {
             perror("recv");
@@ -321,9 +320,8 @@ int main(int argc, char *argv[]) {
 
         msg = cleanBuffer((char *)buf);
 
-        cout << "fazendo parse" << endl;
         resp.parse(buf);
-        std::cout << "tamanho do arquivo total: " << resp.getContentLenght() << endl;
+        
         if(resp.getStatus().compare("200") == 0){
             clength = resp.getContentLenght();
             std::string::iterator aux;
@@ -336,7 +334,6 @@ int main(int argc, char *argv[]) {
                     break;
                 }
             }
-            std::cout << sizeHead << endl;
             memmove(msgToWrt, buf + sizeHead, 1500 - sizeHead);
             string filename = "." + objectList[k];
             if(filename.compare("./") == 0){
@@ -352,7 +349,6 @@ int main(int argc, char *argv[]) {
             int bytes_writen = write(fw, &msgToWrt, bytes_recebidos - sizeHead);
             if (bytes_writen == -1)
                 cout << errno << endl;
-            cout << "bytes gravados: " << bytes_writen << endl;
 
             cont += bytes_writen;
             while(cont != clength){
@@ -367,17 +363,14 @@ int main(int argc, char *argv[]) {
                     return 5;
                 }
 
-                cout << "bytes gravados: " << bytes_recebidos << endl;
 
                 memmove(msgToWrt, buf, bytes_recebidos);
                 bytes_writen = write(fw, &msgToWrt, bytes_recebidos);
                 if (bytes_writen == -1)
                     cout << errno << endl;
                 cont += bytes_recebidos;
-                std::cout << "bytes restantes: " << clength - cont << std::endl;
-                cout << "bytes gravados: " << bytes_writen << endl;
             }
-            std::cout << "saiu do loop" << endl;
+            std::cout << "Arquivo Recebido" << endl;
             close(fw);
         } else if(resp.getStatus().compare("404") == 0) {
             std::cout << buf << std::endl;

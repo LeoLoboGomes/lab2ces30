@@ -108,8 +108,7 @@ void HTTPReq::parse(string bytecode) {
     istringstream iss(bytecode);
     iss >> lixo;
     iss >> url;
-    //Verificar se file existe, se nao existir retornar 404, se existir encontrar tamanho e retorna 200
-    //Teste de exemplo
+    
     setURL(url);
     setMethod("res");
     setStatus("200");
@@ -157,14 +156,13 @@ void *connection_handler(void *arg) {
   // utiliza um buffer de 20 bytes (char)
 
   threadArg *argument = (threadArg *)arg;
-  // std::cout << "Thread argument is here: " << argument->dirpath << std::endl;
-  // std::cout << "Ok, that ended" << std::endl;
+
   int sock = argument->sock;
   string dirpath = argument->dirpath;
   bool isEnd = false;
   char buf[BUFFER_SIZE] = {0};
   std::stringstream ss;
-  // std::cout << "Initialized variables" << std::endl;
+ 
 
   while (!isEnd) {
       // zera a memoria do buffer
@@ -201,7 +199,6 @@ void *connection_handler(void *arg) {
       char cname[40] = {'\0'};
       for (int i = 0; i < filepath.length(); i++) { 
           cname[i] = filepath[i]; 
-          cout << cname[i]; 
       }  
 
       if(filename.length() < 1) {
@@ -212,8 +209,6 @@ void *connection_handler(void *arg) {
 
       const std::string subfilepath = filename.substr(1);
 
-
-      std::cout << "Filename substr: '" << filepath << "'" << std::endl;
 
       //Cheque para filename com "/" no meio (possivel exploit)
       if(subfilepath.find("/") != std::string::npos) {
@@ -244,28 +239,18 @@ void *connection_handler(void *arg) {
             unsigned char msg[BUFFER_SIZE];
             unsigned char sendBuffer[BUFFER_SIZE];
             memset(msg, '\0', BUFFER_SIZE);
-            std::cout << bytecode;
-            std::cout << "bytes in header: " << bytecode.size() << std::endl;
-            //loop para envio do file
-            //int teste = open("./testeSend.pdf", O_WRONLY | O_CREAT, 0644);
             while(cont < file_size){
                 int readNum = BUFFER_SIZE - bytecode.size();
-                //fread(msg, sizeof(char), readNum, file);
-                //is.read (msg,readNum);
+                
                 bytes_read = read(fdes, &msg, readNum);
-                if(bytes_read==-1)
+                if(bytes_read == -1)
                     cout<< errno <<endl;
-                std::cout << "bytes lidos: " << bytes_read << std::endl;
-                /*int bytes_writen = write(teste, &msg, bytes_read);
-                if (bytes_writen == -1)
-                    cout << errno << endl;*/
-                //cout << "bytes gravados: " << bytes_writen << endl;
+                
                 string data = (char *)msg;
 
                 response.catMessage(bytecode, msg, sendBuffer, bytes_read);
                 
-                std::cout << "bytes in bytecode: " << bytecode.size() << std::endl;
-                //cout << sendBuffer << endl;
+                
                 int byte_size;
 
                 if ((byte_size = send(sock, sendBuffer, bytes_read + bytecode.size(), 0)) == -1) {
@@ -274,17 +259,17 @@ void *connection_handler(void *arg) {
                     int ret_value = 6;
                     return (void*)ret_value;
                 }
-                std::cout << "bytes enviados: " << byte_size << std::endl;
+                
                 bytecode = "\0";
                 memset(msg, '\0',BUFFER_SIZE);
                 memset(sendBuffer, '\0',BUFFER_SIZE);
                 cont += byte_size;
-                std::cout << "cont: " << cont << std::endl;
+                
             }
             close(fdes);
         } else {
             response.setStatus("404");
-            //do something
+            
             int byte_size;
             bytecode = response.encode();
             if ((byte_size = send(sock, bytecode.c_str(), 100, 0)) == -1) {
