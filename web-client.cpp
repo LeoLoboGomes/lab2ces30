@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
             if(filename.compare("./") == 0){
                 filename = filename + "index.html";
             }
-            char cname[40];
+            char cname[40] = {'\0'};
             for (int i = 0; i < filename.length(); i++) {
                 cname[i] = filename[i];
             }

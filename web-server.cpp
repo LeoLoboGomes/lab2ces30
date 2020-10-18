@@ -198,7 +198,7 @@ void *connection_handler(void *arg) {
           filename = filename + "index.html";
       }
       const std::string filepath = dirpath + filename;
-      char cname[40];
+      char cname[40] = {'\0'};
       for (int i = 0; i < filepath.length(); i++) { 
           cname[i] = filepath[i]; 
           cout << cname[i]; 
