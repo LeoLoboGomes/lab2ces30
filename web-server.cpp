@@ -247,17 +247,19 @@ void *connection_handler(void *arg) {
             std::cout << bytecode;
             std::cout << "bytes in header: " << bytecode.size() << std::endl;
             //loop para envio do file
-            int teste = open("./testeSend.pdf", O_WRONLY | O_CREAT, 0644);
+            //int teste = open("./testeSend.pdf", O_WRONLY | O_CREAT, 0644);
             while(cont < file_size){
                 int readNum = BUFFER_SIZE - bytecode.size();
                 //fread(msg, sizeof(char), readNum, file);
                 //is.read (msg,readNum);
                 bytes_read = read(fdes, &msg, readNum);
+                if(bytes_read==-1)
+                    cout<< errno <<endl;
                 std::cout << "bytes lidos: " << bytes_read << std::endl;
-                int bytes_writen = write(teste, &msg, bytes_read);
+                /*int bytes_writen = write(teste, &msg, bytes_read);
                 if (bytes_writen == -1)
-                    cout << errno << endl;
-                cout << "bytes gravados: " << bytes_writen << endl;
+                    cout << errno << endl;*/
+                //cout << "bytes gravados: " << bytes_writen << endl;
                 string data = (char *)msg;
 
                 response.catMessage(bytecode, msg, sendBuffer, bytes_read);
@@ -273,24 +275,13 @@ void *connection_handler(void *arg) {
                     return (void*)ret_value;
                 }
                 std::cout << "bytes enviados: " << byte_size << std::endl;
-
                 bytecode = "\0";
                 memset(msg, '\0',BUFFER_SIZE);
                 memset(sendBuffer, '\0',BUFFER_SIZE);
                 cont += byte_size;
                 std::cout << "cont: " << cont << std::endl;
             }
-
-            // envia de volta o buffer recebido como um echo
-
-
-            // o conteudo do buffer convertido para string pode
-            // ser comparado com palavras-chave
-            if (ss.str() == "close\n")
-              break;
-
-            // zera a string para receber a proxima
-            ss.str("");
+            close(fdes);
         } else {
             response.setStatus("404");
             //do something
@@ -303,7 +294,6 @@ void *connection_handler(void *arg) {
                 return (void*) ret_value;
             }
             cout << filename << endl;
-            continue;
         }
     }
   }

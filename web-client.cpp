@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    string url = argv[1];
+    string url;
     string address;
     string port;
     string object;
@@ -295,7 +295,8 @@ int main(int argc, char *argv[]) {
     unsigned char msgToWrt[1500] = {0};
     std::stringstream ss;
 
-    int L = sizeof(objectList);
+    int L = objectList.size();
+    cout << L << endl;
     for (int k = 0; k < L; k++) {
         //Criar HTTP request
         HTTPReq request(objectList[k], "req");
@@ -337,8 +338,10 @@ int main(int argc, char *argv[]) {
             }
             std::cout << sizeHead << endl;
             memmove(msgToWrt, buf + sizeHead, 1500 - sizeHead);
-
             string filename = "." + objectList[k];
+            if(filename.compare("./") == 0){
+                filename = filename + "index.html";
+            }
             char cname[40];
             for (int i = 0; i < filename.length(); i++) {
                 cname[i] = filename[i];
@@ -346,13 +349,13 @@ int main(int argc, char *argv[]) {
             int fw = open(cname, O_WRONLY | O_CREAT, 0644);
             cout << cname << endl;
 
-            int bytes_writen = write(fw, &msgToWrt, 1500 - sizeHead);
+            int bytes_writen = write(fw, &msgToWrt, bytes_recebidos - sizeHead);
             if (bytes_writen == -1)
                 cout << errno << endl;
             cout << "bytes gravados: " << bytes_writen << endl;
 
             cont += bytes_writen;
-            while(cont < clength){
+            while(cont != clength){
                 // zera o buffer
                 memset(buf, '\0', sizeof(buf));
                 memset(msgToWrt, '\0', sizeof(msgToWrt));
@@ -376,7 +379,6 @@ int main(int argc, char *argv[]) {
             }
             std::cout << "saiu do loop" << endl;
             close(fw);
-            break;
         } else if(resp.getStatus().compare("404") == 0) {
             std::cout << buf << std::endl;
             std::cout << objectList[k].substr(1,objectList[k].length()) << " was not found" << std::endl;
@@ -385,13 +387,6 @@ int main(int argc, char *argv[]) {
             break;
         }
         msg = "";
-
-        // se a string tiver o valor close, sair do loop de eco
-        if (ss.str() == "close\n")
-            break;
-
-        // zera a string ss
-        ss.str("");
     }
 
     // fecha o socket
